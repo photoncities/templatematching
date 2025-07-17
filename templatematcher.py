@@ -3,7 +3,6 @@ import os
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image
-import glob
 from threading import Lock
 import csv
 import datetime

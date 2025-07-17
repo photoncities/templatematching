@@ -6,6 +6,11 @@ To use this script you need:
 - A snippet of your target image in the working directory.
 - A folder that contains the target image in the working directory.
 
+The following packages are necessary:
+```
+opencv-python numpy PIL 
+```
+
 An example set is provided courtesy of [Lorem Picsum](https://picsum.photos). I encourage you to use your own folder.
 
 ### Procedure
