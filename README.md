@@ -15,3 +15,4 @@ An example set is provided courtesy of [Lorem Picsum](https://picsum.photos). I 
 **2. Template Matching**
 <br>Multithreaded matching phase. Simultaneously documents results in `match_results.csv`.
 
+I'm aware the documentation process is a bit unique; Additions to the match_results are thread-safely sorted in ascending order, and when complete, sorted in descending order. I did this so someone viewing the csv during the process can see the current top match (turn autoscrolling on if you have it in your working terminal) and exit early if necessary.

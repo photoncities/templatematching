@@ -6,17 +6,22 @@ from PIL import Image
 import glob
 from threading import Lock
 import csv
+import datetime
 
 # --- CONFIG ---
 query_path = "target.png"
 folder_path = "searchfolder"
 clean_folder = "searchfolder_clean"  # Folder for cleaned images
 correlation_folder = "correlation_maps"  # Folder for correlation maps
-results_file = "match_results.csv"  # Output CSV file
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+results_file = f"match_results_{timestamp}.csv"
+
+
+
 method = cv2.TM_CCOEFF_NORMED
 num_workers = 6  # Matches 6-core processor
 max_pyramid_levels = 3  # Number of pyramid levels for scale invariance
-log_scale_factor = 100  # Controls logarithmic tolerance (higher = stricter)
+log_scale_factor = 0.0001  # Controls logarithmic tolerance (higher = stricter)
 save_correlation_maps = False  # Boolean to toggle correlation map saving (Purely for fun lol, slows it down by orders of magnitude)
 
 # Create folders
@@ -209,6 +214,27 @@ with ThreadPoolExecutor(max_workers=num_workers) as executor:
             update_csv(result)  # Update CSV in real time
 
 print(f"\nResults saved to {results_file}")
+# Sort results file in descending order by score
+with open(results_file, 'r', newline='') as csvfile:
+    reader = csv.reader(csvfile)
+    header = next(reader, None)
+    results = []
+    for row in reader:
+        if len(row) == 2:
+            results.append((float(row[0]), row[1]))
+
+results.sort(key=lambda x: x[0], reverse=True)
+
+with open(results_file, 'w', newline='') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(['Score', 'Filename'])
+    for score, name in results:
+        writer.writerow([f"{score:.4f}", name])
+
+if results:
+    print(f"Top match: {results[0][1]}")
+else:
+    print("No matches found.")
 if save_correlation_maps:
     print(f"Correlation maps saved to {correlation_folder}")
 else:
