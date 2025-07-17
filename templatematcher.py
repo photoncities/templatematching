@@ -28,6 +28,7 @@ if save_correlation_maps:
 all_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".png")]
 total_files = len(all_files)
 completed_files = 0
+matched_files = 0
 completed_matches = 0
 file_lock = Lock()
 match_lock = Lock()
@@ -36,18 +37,22 @@ csv_lock = Lock()
 
 def print_file_progress(file, phase):
     global completed_files
+    global matched_files
+
+    fileCount = completed_files if phase != "Matching" else matched_files
     with file_lock:
-        completed_files += 1
-        percentage = (completed_files / (2 * total_files)) * 100  # Total includes cleaning + matching
-        print(f"{phase} file {completed_files}/{2 * total_files} ({percentage:.2f}%): {file}")
+        fileCount += 1
+        percentage = (fileCount / total_files) * 100  
+        print(f"{phase} file {fileCount}/{total_files} ({percentage:.2f}%): {file}")
+
+    if phase == "Matching":
+        matched_files = fileCount
+        return
+    completed_files = fileCount
+    
 
 # Print match completion percentage
-def print_match_progress():
-    global completed_matches
-    with match_lock:
-        completed_matches += 1
-        percentage = (completed_matches / total_files) * 100
-        print(f"Match completion: {percentage:.2f}% ({completed_matches}/{total_files} files)")
+
 
 # Update CSV with new result, keeping it sorted in ascending order
 def update_csv(new_result):
@@ -94,10 +99,12 @@ def clean_png(input_path, output_path, file_name):
         return False
 
 # Clean target.png
+completed_files = -1
 print(f"Cleaning query image: {query_path}")
-clean_query_path = os.path.join(clean_folder, "target_clean.png")
+clean_query_path = os.path.join("./", "target_clean.png")
 if not clean_png(query_path, clean_query_path, "target.png"):
     raise ValueError("Failed to clean query image.")
+
 
 # Clean all images in folder
 print(f"\nCleaning {total_files} PNGs from {folder_path} to {clean_folder}...")
@@ -122,9 +129,9 @@ print(f"Query image shape: {query_shape}")
 
 # Process image for template matching with pyramids
 def process_image(file):
+    completed_files = 0
     print_file_progress(file, "Matching")
     if not file.lower().endswith(".png"):
-        print_match_progress()
         return None
 
     path = os.path.join(folder_path, file)
@@ -132,12 +139,12 @@ def process_image(file):
         img = cv2.imread(path)
         if img is None:
             print(f"Failed to load {file}")
-            print_match_progress()
+            # print_match_progress()
             return None
 
         if img.shape[0] < query.shape[0] or img.shape[1] < query.shape[1]:
             print(f"Skipping {file}: Image too small (shape: {img.shape[:2]})")
-            print_match_progress()
+            # print_match_progress()
             return None
 
         # Create image pyramid for source image
@@ -184,11 +191,11 @@ def process_image(file):
             corr_path = os.path.join(correlation_folder, f"{os.path.splitext(file)[0]}_corr.png")
             cv2.imwrite(corr_path, corr_map)
 
-        print_match_progress()
+        # print_match_progress()
         return (best_score, file) if best_score > -1 else None
     except Exception as e:
         print(f"Error processing {file}: {str(e)}")
-        print_match_progress()
+        # print_match_progress()
         return None
 
 # Run multithreaded match
